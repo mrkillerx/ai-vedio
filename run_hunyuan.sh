@@ -1,43 +1,34 @@
 #!/bin/bash
 
-echo "🔥 Starting Hunyuan Video AI Setup..."
+echo "🚀 Setting up Hunyuan Video AI in /workspace ..."
 
-# Check GPU
-if ! command -v nvidia-smi &> /dev/null; then
-    echo "❌ NVIDIA GPU not found or drivers not installed. Exiting."
-    exit 1
+cd /workspace || exit 1
+
+# Clone repo only if not exists
+if [ ! -d "/workspace/HunyuanVideo-Avatar" ]; then
+    git clone https://github.com/Tencent-Hunyuan/HunyuanVideo-Avatar.git
 fi
 
-# Update system
-sudo apt update && sudo apt upgrade -y
+cd /workspace/HunyuanVideo-Avatar || exit 1
 
-# Install Python 3.10+ and pip
-sudo apt install -y software-properties-common
-sudo add-apt-repository ppa:deadsnakes/ppa -y
-sudo apt update
-sudo apt install -y python3.10 python3.10-venv python3.10-distutils curl git ffmpeg unzip
-
-# Set Python 3.10 as default
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+# Install dependencies
+sudo apt-get update
+sudo apt-get install -y git ffmpeg curl python3.10 python3.10-venv python3.10-distutils
 
 # Install pip
-curl -sS https://bootstrap.pypa.io/get-pip.py | sudo python3.10
+curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
 
-# Clone the Hunyuan repo
-mkdir -p ~/hunyuan
-cd ~/hunyuan
-git clone https://github.com/Tencent-Hunyuan/HunyuanVideo-Avatar.git app
-cd app
-
-# Install Python requirements
+# Install Python packages
 python3.10 -m pip install --upgrade pip
 python3.10 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-python3.10 -m pip install -r requirements.txt gradio==4.24.0
+python3.10 -m pip install -r requirements.txt gradio
 
-# Download model files
-python3.10 scripts/download_models.py
+# Download model weights (if not already done)
+if [ ! -f "checkpoints/hunyuan_v2.safetensors" ]; then
+    echo "📦 Downloading model files..."
+    python3.10 scripts/download_models.py
+fi
 
-# Start Gradio web UI
-echo "✅ Setup complete. Access the web UI at http://<your-ip>:7860"
+# Start Gradio server
+echo "✅ Setup done. Access UI at http://<your-ip>:7860"
 python3.10 app.py --listen --port 7860
